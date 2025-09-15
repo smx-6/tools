@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>日常小工具箱</title>
+<style>
+  :root{
+    --bg:#0f1724; --card:#101827; --muted:#9aa4b2; --accent:#6ee7b7; --accent2:#60a5fa; --glass: rgba(255,255,255,0.03);
+    --radius:14px; font-family:Inter, ui-sans-serif, system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;min-height:100vh;background:
+      radial-gradient(1200px 600px at 10% 10%, rgba(110,231,183,0.06), transparent 8%),
+      radial-gradient(1000px 500px at 90% 90%, rgba(99,102,241,0.04), transparent 6%),
+      var(--bg);
+    color:#e6eef6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  }
+  .wrap{max-width:1100px;margin:28px auto;padding:20px;display:grid;gap:20px;
+        grid-template-columns:1.1fr 0.9fr;align-items:start;}
+  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+  h1{margin:0;font-size:22px;letter-spacing:0.3px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.015));
+    border:1px solid rgba(255,255,255,0.05);
+    padding:16px;border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(2,6,23,0.5);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(2,6,23,0.7);}
+  button{
+    background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted);
+    padding:12px;border-radius:10px;font-size:15px;cursor:pointer;transition:all .2s ease;
+  }
+  button:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  button:active{transform:scale(0.95);}
+  button:focus-visible{outline:2px solid var(--accent2);}
+  button.primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#042018;border:0;font-weight:600;
+  }
+  input,textarea,select{
+    font-family:inherit;color:inherit;background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:8px;
+    transition:border .2s ease,background .2s ease;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--accent2);background:rgba(255,255,255,0.05);outline:none;}
+  .todo-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.02);transition:background .2s;}
+  .todo-item:hover{background:rgba(255,255,255,0.08);}
+  .todo-item.done{opacity:0.6;text-decoration:line-through;}
+  .todo-item button{opacity:0;transition:opacity .2s;}
+  .todo-item:hover button{opacity:1;}
+  .calc-screen{background:var(--glass);padding:12px;border-radius:10px;text-align:right;font-size:22px;color:#dffbf0;min-height:40px;}
+  .keypad{display:grid;gap:8px;grid-template-columns:repeat(4,1fr);margin-top:12px;}
+  .muted{color:var(--muted);font-size:13px;}
+  .chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.05);font-size:13px;color:var(--muted);}
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;margin-top:6px;}
+  .lap-list{max-height:120px;overflow:auto;margin-top:8px;}
+  .row { align-items:center; }
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>日常小工具箱</h1>
+      <div class="subtitle">计算器 · 代办 · 单位转换 · 倒计时 · 秒表 · 笔记</div>
+    </div>
+    <div class="controls" style="display:flex;gap:8px;align-items:center;">
+      <div class="chip">离线可用</div>
+      <div class="chip" id="timeNow"></div>
+    </div>
+  </header>
+
+  <!-- 左列：主要工具 -->
+  <section class="card">
+    <h2 style="margin:0 0 8px 0">计算器</h2>
+    <div id="calc">
+      <div class="calc-screen" id="calcScreen">0</div>
+      <div class="keypad">
+        <button data-key="(">(</button><button data-key=")">)</button><button data-key="%" title="百分号">%</button><button id="calcClear">C</button>
+        <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button><button data-key="/" title="除">÷</button>
+        <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button><button data-key="*" title="乘">×</button>
+        <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="-" title="减">−</button>
+        <button data-key="0">0</button><button data-key=".">.</button><button id="calcEval" class="primary">=</button><button data-key="+" title="加">+</button>
+      </div>
+      <div class="muted" style="margin-top:8px">支持括号与简单表达式（按键或键盘输入均可）</div>
+    </div>
+  </section>
+
+  <!-- 右列：代办 & 转换 -->
+  <aside>
+    <div class="card" style="margin-bottom:12px">
+      <h3>代办清单</h3>
+      <div class="row" style="display:flex;gap:8px;">
+        <input id="todoInput" type="text" placeholder="输入待办后按 Enter 或添加" style="flex:1">
+        <button id="todoAdd" class="btn-ghost">添加</button>
+      </div>
+      <div class="todo-list" id="todoList" style="margin-top:10px;max-height:260px;overflow:auto;"></div>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button id="clearDone" class="btn-ghost">清除已完成</button>
+        <button id="clearAll" class="btn-ghost">清空全部</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>单位转换</h3>
+      <div class="grid-2" style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+        <div>
+          <label class="muted small">温度</label>
+          <div class="row" style="display:flex;gap:6px;margin-top:6px;">
+            <input id="tempInput" type="number" step="any" placeholder="数值" style="flex:1">
+            <select id="tempMode">
+              <option value="c2f">℃ → ℉</option>
+              <option value="f2c">℉ → ℃</option>
+            </select>
+            <button id="tempConv" class="btn-ghost">转换</button>
+          </div>
+          <div id="tempRes" class="muted small" style="margin-top:8px;"></div>
+        </div>
+
+        <div>
+          <label class="muted small">长度</label>
+          <div class="row" style="display:flex;gap:6px;margin-top:6px;">
+            <input id="lenInput" type="number" step="any" placeholder="数值" style="flex:1">
+            <select id="lenMode">
+              <option value="m2ft">米 → 英尺</option>
+              <option value="ft2m">英尺 → 米</option>
+            </select>
+            <button id="lenConv" class="btn-ghost">转换</button>
+          </div>
+          <div id="lenRes" class="muted small" style="margin-top:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 下方：倒计时、秒表和笔记 -->
+  <section class="card" style="grid-column:1/-1">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px">
+        <h3>倒计时</h3>
+        <div class="row" style="display:flex;gap:6px;">
+          <input id="cdMinutes" type="number" placeholder="分钟" min="0" style="width:100px">
+          <input id="cdSeconds" type="number" placeholder="秒" min="0" max="59" style="width:100px">
+          <button id="cdStart" class="primary">开始</button>
+          <button id="cdPause" class="btn-ghost">暂停</button>
+          <button id="cdReset" class="btn-ghost">重置</button>
+        </div>
+        <div id="cdDisplay" style="margin-top:8px;font-size:24px;font-weight:bold;">00:00</div>
+      </div>
+
+      <div style="flex:1;min-width:280px">
+        <h3>秒表</h3>
+        <div class="row" style="display:flex;gap:6px;">
+          <button id="swStart" class="primary">开始</button>
+          <button id="swStop" class="btn-ghost">停止</button>
+          <button id="swLap" class="btn-ghost">圈次</button>
+          <button id="swReset" class="btn-ghost">重置</button>
+        </div>
+        <div id="swDisplay" style="margin-top:8px;font-size:24px;font-weight:bold;">00:00.00</div>
+        <div class="lap-list" id="laps"></div>
+      </div>
+
+      <div style="flex-basis:100%;"></div>
+
+      <div style="flex:1 1 520px;min-width:300px">
+        <h3>随手笔记（自动保存）</h3>
+        <textarea id="noteArea" rows="6" placeholder="写点什么吧..." style="width:100%;"></textarea>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+          <button id="noteClear" class="btn-ghost">清空笔记</button>
+          <div class="muted small" style="margin-left:auto">保存于本地浏览器</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Made with ❤️ · 本工具全部本地运行，不上传数据</footer>
+</div>
+
+<script>
+/* 所有功能一次性实现：计算器、代办、转换、倒计时、秒表、笔记、时间显示 */
+document.addEventListener('DOMContentLoaded', ()=>{
+
+  // 时间显示（右上）
+  const timeNowEl = document.getElementById('timeNow');
+  function updateTimeNow(){
+    timeNowEl.textContent = new Date().toLocaleString();
+  }
+  updateTimeNow();
+  setInterval(updateTimeNow, 1000);
+
+  /* -------------------------
+     计算器
+     ------------------------- */
+  const calcScreen = document.getElementById('calcScreen');
+  let expr = '';
+
+  // helper: escape displayed string
+  function setCalcDisplay(txt){
+    calcScreen.textContent = txt === '' ? '0' : txt;
+  }
+
+  // buttons with data-key
+  document.querySelectorAll('#calc .keypad button[data-key]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.dataset.key;
+      // convert displayed operator characters to standard ones when appending (but dataset already uses standard)
+      expr += k;
+      setCalcDisplay(expr);
+    });
+  });
+
+  // clear
+  document.getElementById('calcClear').addEventListener('click', ()=>{
+    expr = '';
+    setCalcDisplay('0');
+  });
+
+  // evaluate safely — allow digits, operators, parentheses, dot, spaces, %
+  function safeEval(input){
+    if(!input || input.trim()==='') return '';
+    // replace possible visible operator characters (just in case)
+    let s = String(input).replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');
+    // handle percent like "50%" => "(50/100)"
+    s = s.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+    // validate characters
+    if(!/^[0-9+\-*/().\s]+$/.test(s)){
+      throw new Error('非法字符');
+    }
+    // evaluate
+    // Use Function to avoid direct eval global exposure
+    return Function('"use strict";return ('+s+')')();
+  }
+
+  document.getElementById('calcEval').addEventListener('click', ()=>{
+    try{
+      const result = safeEval(expr);
+      expr = (typeof result === 'number' && !isFinite(result)) ? '' : String(result);
+      setCalcDisplay(expr || '0');
+    }catch(e){
+      setCalcDisplay('错误');
+      expr = '';
+    }
+  });
+
+  // keyboard support for calculator
+  document.addEventListener('keydown', (e)=>{
+    // if focus is in text/textarea (e.g., todo input or notes), we should still allow numbers/operators for calc optionally.
+    // We'll allow global keys but avoid interfering with typical typing in inputs by checking active element
+    const active = document.activeElement;
+    const ignoreTags = ['INPUT','TEXTAREA','SELECT'];
+    // if user focus is on the calculator screen itself or body, accept keys; otherwise allow Enter as calc evaluate
+    const key = e.key;
+    if(/^[0-9+\-*/().%]$/.test(key)){
+      // append to calc expression
+      expr += key;
+      setCalcDisplay(expr);
+      e.preventDefault();
+      return;
+    }
+    if(key === 'Enter'){
+      document.getElementById('calcEval').click();
+      // do not preventDefault when typing in other inputs (so Enter still submits in inputs where expected)
+      if(!ignoreTags.includes(active.tagName)) e.preventDefault();
+      return;
+    }
+    if(key === 'Backspace'){
+      expr = expr.slice(0,-1);
+      setCalcDisplay(expr || '0');
+    }
+  });
+
+  /* -------------------------
+     代办清单（localStorage）
+     ------------------------- */
+  const todoInput = document.getElementById('todoInput');
+  const todoAdd = document.getElementById('todoAdd');
+  const todoListEl = document.getElementById('todoList');
+  let todos = JSON.parse(localStorage.getItem('miniToolbox_todos') || '[]');
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+  function renderTodos(){
+    todoListEl.innerHTML = '';
+    todos.forEach((t, idx)=>{
+      const item = document.createElement('div');
+      item.className = 'todo-item' + (t.done ? ' done' : '');
+      item.innerHTML = `
+        <input type="checkbox" data-idx="${idx}" ${t.done ? 'checked' : ''}>
+        <div style="flex:1">${escapeHtml(t.text)}</div>
+        <button data-del="${idx}" title="删除">✕</button>
+      `;
+      todoListEl.appendChild(item);
+    });
+  }
+  function saveTodos(){
+    localStorage.setItem('miniToolbox_todos', JSON.stringify(todos));
+    renderTodos();
+  }
+
+  function addTodo(){
+    const v = todoInput.value.trim();
+    if(!v) return;
+    todos.push({text: v, done: false});
+    todoInput.value = '';
+    saveTodos();
+  }
+  todoAdd.addEventListener('click', addTodo);
+  todoInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addTodo(); });
+
+  // event delegation for toggles and deletes
+  todoListEl.addEventListener('change', (e)=>{
+    if(e.target.matches('input[type="checkbox"]')){
+      const idx = Number(e.target.dataset.idx);
+      if(!Number.isNaN(idx) && todos[idx]) {
+        todos[idx].done = e.target.checked;
+        saveTodos();
+      }
+    }
+  });
+  todoListEl.addEventListener('click', (e)=>{
+    const del = e.target.dataset && e.target.dataset.del;
+    if(del !== undefined){
+      const idx = Number(del);
+      if(!Number.isNaN(idx)) {
+        todos.splice(idx, 1);
+        saveTodos();
+      }
+    }
+  });
+
+  document.getElementById('clearDone').addEventListener('click', ()=>{
+    todos = todos.filter(t => !t.done);
+    saveTodos();
+  });
+  document.getElementById('clearAll').addEventListener('click', ()=>{
+    if(!confirm('确定要清空全部待办吗？')) return;
+    todos = [];
+    saveTodos();
+  });
+
+  renderTodos();
+
+  /* -------------------------
+     单位转换
+     ------------------------- */
+  document.getElementById('tempConv').addEventListener('click', ()=>{
+    const v = parseFloat(document.getElementById('tempInput').value);
+    const mode = document.getElementById('tempMode').value;
+    const resEl = document.getElementById('tempRes');
+    if(isNaN(v)){ resEl.textContent = '请输入数值'; return; }
+    if(mode === 'c2f') resEl.textContent = (v * 9/5 + 32).toFixed(2) + ' ℉';
+    else resEl.textContent = ((v - 32) * 5/9).toFixed(2) + ' ℃';
+  });
+  document.getElementById('lenConv').addEventListener('click', ()=>{
+    const v = parseFloat(document.getElementById('lenInput').value);
+    const mode = document.getElementById('lenMode').value;
+    const resEl = document.getElementById('lenRes');
+    if(isNaN(v)){ resEl.textContent = '请输入数值'; return; }
+    if(mode === 'm2ft') resEl.textContent = (v * 3.28084).toFixed(4) + ' ft';
+    else resEl.textContent = (v / 3.28084).toFixed(4) + ' m';
+  });
+
+  /* -------------------------
+     倒计时
+     ------------------------- */
+  const cdMinutes = document.getElementById('cdMinutes');
+  const cdSeconds = document.getElementById('cdSeconds');
+  const cdStart = document.getElementById('cdStart');
+  const cdPause = document.getElementById('cdPause');
+  const cdReset = document.getElementById('cdReset');
+  const cdDisplay = document.getElementById('cdDisplay');
+
+  let cdTimer = null;
+  let cdRemaining = 0;
+
+  function formatTimeSec(s){ const mm = Math.floor(s/60).toString().padStart(2,'0'); const ss = Math.floor(s%60).toString().padStart(2,'0'); return `${mm}:${ss}`; }
+
+  function beep(duration = 300, freq = 440) {
+    // 简单的 beep — 不会长期占用资源
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      const ctx = new AC();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.value = 0.05;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{ o.stop(); ctx.close(); }, duration);
+    } catch(e){}
+  }
+
+  cdStart.addEventListener('click', ()=>{
+    if(cdTimer) return; // already running
+    const mins = parseInt(cdMinutes.value) || 0;
+    const secs = parseInt(cdSeconds.value) || 0;
+    if(mins < 0 || secs < 0 || secs > 59){ alert('请输入合法的分钟和秒（秒：0-59）'); return; }
+    cdRemaining = mins * 60 + secs;
+    if(cdRemaining <= 0){ alert('请输入大于 0 的倒计时'); return; }
+    cdDisplay.textContent = formatTimeSec(cdRemaining);
+    cdTimer = setInterval(()=>{
+      cdRemaining--;
+      cdDisplay.textContent = formatTimeSec(Math.max(0, cdRemaining));
+      if(cdRemaining <= 0){
+        clearInterval(cdTimer);
+        cdTimer = null;
+        cdDisplay.textContent = '00:00';
+        // 声音提示与闪烁
+        beep(500, 600);
+        cdDisplay.style.transition = 'background-color .3s';
+        const old = cdDisplay.style.backgroundColor;
+        cdDisplay.style.backgroundColor = 'rgba(255,0,0,0.12)';
+        setTimeout(()=> cdDisplay.style.backgroundColor = old, 800);
+      }
+    }, 1000);
+  });
+  cdPause.addEventListener('click', ()=>{
+    if(cdTimer){ clearInterval(cdTimer); cdTimer = null; }
+  });
+  cdReset.addEventListener('click', ()=>{
+    if(cdTimer){ clearInterval(cdTimer); cdTimer = null; }
+    cdRemaining = 0;
+    cdDisplay.textContent = '00:00';
+    cdMinutes.value = ''; cdSeconds.value = '';
+  });
+
+  /* -------------------------
+     秒表（requestAnimationFrame）
+     ------------------------- */
+  const swStart = document.getElementById('swStart');
+  const swStop = document.getElementById('swStop');
+  const swLap = document.getElementById('swLap');
+  const swReset = document.getElementById('swReset');
+  const swDisplay = document.getElementById('swDisplay');
+  const lapsEl = document.getElementById('laps');
+
+  let swStartTime = 0;
+  let swElapsed = 0;         // 毫秒
+  let swElapsedBefore = 0;   // 暂停前已累计
+  let swRunning = false;
+  let swRaf = null;
+  let swLaps = [];
+
+  function formatMillis(ms){
+    const mm = Math.floor(ms/60000).toString().padStart(2,'0');
+    const ss = Math.floor((ms%60000)/1000).toString().padStart(2,'0');
+    const cs = Math.floor((ms%1000)/10).toString().padStart(2,'0');
+    return `${mm}:${ss}.${cs}`;
+  }
+
+  function renderSw(){
+    const t = swElapsed;
+    swDisplay.textContent = formatMillis(t);
+    lapsEl.innerHTML = swLaps.map((l, idx)=>`<div class="muted small">${idx+1}. ${formatMillis(l)}</div>`).join('');
+  }
+
+  function swTick(){
+    swElapsed = (performance.now() - swStartTime) + swElapsedBefore;
+    renderSw();
+    swRaf = requestAnimationFrame(swTick);
+  }
+
+  swStart.addEventListener('click', ()=>{
+    if(swRunning) return;
+    swRunning = true;
+    swStartTime = performance.now();
+    swRaf = requestAnimationFrame(swTick);
+  });
+
+  swStop.addEventListener('click', ()=>{
+    if(!swRunning) return;
+    swRunning = false;
+    if(swRaf) cancelAnimationFrame(swRaf);
+    swRaf = null;
+    swElapsedBefore = swElapsed; // 保留
+  });
+
+  swLap.addEventListener('click', ()=>{
+    if(!swRunning) return;
+    // 存最新圈在最前面
+    swLaps.unshift(swElapsed);
+    renderSw();
+  });
+
+  swReset.addEventListener('click', ()=>{
+    swRunning = false;
+    if(swRaf) cancelAnimationFrame(swRaf);
+    swRaf = null;
+    swStartTime = 0; swElapsed = 0; swElapsedBefore = 0; swLaps = [];
+    renderSw();
+  });
+
+  // 初始渲染
+  renderSw();
+
+  /* -------------------------
+     随手笔记（自动保存）
+     ------------------------- */
+  const noteArea = document.getElementById('noteArea');
+  const noteClear = document.getElementById('noteClear');
+  // load
+  noteArea.value = localStorage.getItem('miniToolbox_note') || '';
+  let noteTimer = null;
+  noteArea.addEventListener('input', ()=>{
+    if(noteTimer) clearTimeout(noteTimer);
+    noteTimer = setTimeout(()=> {
+      localStorage.setItem('miniToolbox_note', noteArea.value);
+    }, 600);
+  });
+  noteClear.addEventListener('click', ()=>{
+    if(!confirm('清空笔记？')) return;
+    noteArea.value = '';
+    localStorage.removeItem('miniToolbox_note');
+  });
+
+  // small style fallback for .btn-ghost to keep consistent look
+  document.querySelectorAll('.btn-ghost').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.border = '1px solid rgba(255,255,255,0.04)';
+  });
+
+}); // DOMContentLoaded end
+</script>
+</body>
+</html>
